@@ -4,15 +4,21 @@
 #include <sourcemod>
 #include <faceit-api>
 
+#define PLUGIN_VERSION "1.0.0"
+
 ConVar convar_Enabled;
 ConVar convar_APIKey;
 
 enum struct Player {
+	bool registered;
+
 	char player_id[128];
 	int skill_level;
 	int faceit_elo;
 
 	void Clear() {
+		this.registered = false;
+
 		this.player_id[0] = '\0';
 		this.skill_level = 0;
 		this.faceit_elo = 0;
@@ -27,25 +33,26 @@ public Plugin myinfo = {
 	name = "[ANY] FACEIT - API",
 	author = "Drixevel",
 	description = "The main API plugin for FACEIT integration.",
-	version = "1.0.0",
+	version = PLUGIN_VERSION,
 	url = "https://drixevel.dev/"
 };
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max) {
 	RegPluginLibrary("faceit-api");
 
+	CreateNative("FACEIT_IsRegistered", Native_IsRegistered);
 	CreateNative("FACEIT_GetPlayerID", Native_GetPlayerID);
 	CreateNative("FACEIT_GetSkillLevel", Native_GetSkillLevel);
 	CreateNative("FACEIT_GetElo", Native_GetElo);
 
-	g_Forward_OnGetFACEITData = new GlobalForward("OnGetFACEITData", ET_Ignore, Param_Cell, Param_Cell);
+	g_Forward_OnGetFACEITData = new GlobalForward("OnGetFACEITData", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
 
 	return APLRes_Success;
 }
 
 public void OnPluginStart() {
 
-	CreateConVar("sm_faceit_api_version", "1.0.0", "Version control for this plugin.", FCVAR_DONTRECORD);
+	CreateConVar("sm_faceit_api_version", PLUGIN_VERSION, "Version control for this plugin.", FCVAR_DONTRECORD);
 	convar_Enabled = CreateConVar("sm_faceit_api_enabled", "1", "Should this plugin be enabled or disabled?", FCVAR_NOTIFY, true, 0.0, true, 1.0);
 	convar_APIKey = CreateConVar("sm_faceit_api_key", "", "What's the API key?", FCVAR_PROTECTED);
 	AutoExecConfig();
@@ -93,13 +100,13 @@ public void OnClientAuthorized(int client, const char[] auth) {
 	request.Get(OnGetFACEITAPIData, GetClientUserId(client));
 }
 
-public void OnGetFACEITAPIData(HTTPResponse response, any value, const char[] error)  {
+public void OnGetFACEITAPIData(HTTPResponse response, any value)  {
 	if (!convar_Enabled.BoolValue) {
 		return;
 	}
 
-	if (response.Status != HTTPStatus_OK) {
-		ThrowError("[SM] Error while fetching FACEIT data with Error Code '%i': %s", response.Status, error);
+	if (response.Status != HTTPStatus_OK && response.Status != HTTPStatus_NotFound) {
+		ThrowError("[SM] Error while fetching FACEIT data with Error Code '%i'.", response.Status);
 	}
 
 	int client;
@@ -111,18 +118,34 @@ public void OnGetFACEITAPIData(HTTPResponse response, any value, const char[] er
 	JSONObject games = view_as<JSONObject>(obj.Get("games"));
 	JSONObject csgo = view_as<JSONObject>(games.Get("csgo"));
 
+	g_Player[client].registered = response.Status != HTTPStatus_NotFound;
 	obj.GetString("player_id", g_Player[client].player_id, sizeof(Player::player_id));
 	g_Player[client].skill_level = csgo.GetInt("skill_level");
 	g_Player[client].faceit_elo = csgo.GetInt("faceit_elo");
 
 	Call_StartForward(g_Forward_OnGetFACEITData);
 	Call_PushCell(client);
+	Call_PushCell(g_Player[client].registered);
 	Call_PushCell(obj); //Might need to duplicate this.
 	Call_Finish();
 }
 
 public void OnClientDisconnect_Post(int client) {
 	g_Player[client].Clear();
+}
+
+public int Native_IsRegistered(Handle plugin, int numParam) {
+	if (!convar_Enabled.BoolValue) {
+		return ThrowNativeError(SP_ERROR_NATIVE, "FACEIT API is disabled.");
+	}
+
+	int client = GetNativeCell(1);
+
+	if (client < 1 || client > MaxClients) {
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %i", client);
+	}
+
+	return g_Player[client].registered;
 }
 
 public int Native_GetPlayerID(Handle plugin, int numParam) {

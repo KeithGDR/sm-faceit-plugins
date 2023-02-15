@@ -9,6 +9,15 @@
 //Natives
 
 /**
+* Retrieves whether the player is registered on FACEIT or not.
+*
+* param client		Client index.
+*
+* return			True if registered, false otherwise.
+**/
+native bool FACEIT_IsRegistered(int client);
+
+/**
 * Retrieves the FACEIT player id for the player.
 *
 * param client		Client index.
@@ -48,11 +57,12 @@ native int FACEIT_GetElo(int client);
 *
 * noreturn
 **/
-forward void OnGetFACEITData(int client, JSONObject obj);
+forward void OnGetFACEITData(int client, bool registered, JSONObject obj);
 
 #if !defined REQUIRE_PLUGIN
 public void __pl_faceit_api_SetNTVOptional()
 {
+	MarkNativeAsOptional("FACEIT_IsRegistered");
 	MarkNativeAsOptional("FACEIT_GetPlayerID");
 	MarkNativeAsOptional("FACEIT_GetSkillLevel");
 	MarkNativeAsOptional("FACEIT_GetElo");

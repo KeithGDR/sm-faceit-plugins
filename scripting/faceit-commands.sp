@@ -3,8 +3,9 @@
 
 #include <sourcemod>
 #include <faceit-api>
+#include <colors>
 
-#define PLUGIN_VERSION "1.0.0"
+#define PLUGIN_VERSION "1.0.1"
 
 ConVar convar_Enabled;
 ConVar convar_Command_Level;
@@ -20,6 +21,7 @@ public Plugin myinfo = {
 
 public void OnPluginStart() {
 	LoadTranslations("common.phrases");
+	LoadTranslations("faceit_commands.phrases");
 
 	CreateConVar("sm_faceit_commands_version", PLUGIN_VERSION, "Version control for this plugin.", FCVAR_DONTRECORD);
 	convar_Enabled = CreateConVar("sm_faceit_commands_enabled", "1", "Should this plugin be enabled or disabled?", FCVAR_NOTIFY, true, 0.0, true, 1.0);
@@ -40,7 +42,7 @@ public Action Command_Level(int client, int args) {
 	if (args == 0) {
 		char command[64];
 		GetCmdArg(0, command, sizeof(command));
-		ReplyToCommand(client, "[FACEIT] Usage: %s <player>", command);
+		CReplyToCommand(client, "%T", "level usage", client, command);
 		return Plugin_Handled;
 	}
 
@@ -55,11 +57,11 @@ public Action Command_Level(int client, int args) {
 	}
 
 	if (!FACEIT_IsRegistered(target)) {
-		ReplyToCommand(client, "[FACEIT] %N is not registered on FACEIT.", target);
+		CReplyToCommand(client, "%T", "not registered", client, target);
 		return Plugin_Handled;
 	}
 
-	ReplyToCommand(client, "[FACEIT] %N's level is: %i", target, FACEIT_GetSkillLevel(target));
+	CReplyToCommand(client, "%T", "show level", client, target, FACEIT_GetSkillLevel(target));
 
 	return Plugin_Handled;
 }
@@ -72,7 +74,7 @@ public Action Command_Elo(int client, int args) {
 	if (args == 0) {
 		char command[64];
 		GetCmdArg(0, command, sizeof(command));
-		ReplyToCommand(client, "[FACEIT] Usage: %s <player>", command);
+		CReplyToCommand(client, "%T", "elo usage", client, command);
 		return Plugin_Handled;
 	}
 
@@ -87,11 +89,11 @@ public Action Command_Elo(int client, int args) {
 	}
 
 	if (!FACEIT_IsRegistered(target)) {
-		ReplyToCommand(client, "[FACEIT] %N is not registered on FACEIT.", target);
+		CReplyToCommand(client, "%T", "not registered", client, target);
 		return Plugin_Handled;
 	}
 
-	ReplyToCommand(client, "[FACEIT] %N's elo is: %i", target, FACEIT_GetElo(target));
+	CReplyToCommand(client, "%T", "show elo", client, target, FACEIT_GetElo(target));
 
 	return Plugin_Handled;
 }

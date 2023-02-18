@@ -1,0 +1,19 @@
+"Phrases"
+{
+	"not registered kick"
+	{
+		"en"	"You must be registered on FACEIT to join this server."
+	}
+
+	"too low level kick"
+	{
+		"#format"	"{1:i}"
+		"en"	"You must be FACEIT level {1} or higher to join this server."
+	}
+
+	"too low elo kick"
+	{
+		"#format"	"{1:i}"
+		"en"	"You must have a FACEIT elo of {1} or higher to join this server."
+	}
+}

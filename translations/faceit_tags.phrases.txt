@@ -1,0 +1,8 @@
+"Phrases"
+{
+	"level tag"
+	{
+		"#format"	"{1:i},{2:s}"
+		"en"	"[FACEIT Level: {1}] {2}"
+	}
+}

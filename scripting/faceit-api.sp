@@ -114,14 +114,38 @@ public void OnGetFACEITAPIData(HTTPResponse response, any value)  {
 		return;
 	}
 
+	g_Player[client].registered = response.Status != HTTPStatus_NotFound;
+
 	JSONObject obj = view_as<JSONObject>(response.Data);
+
+	if (obj == null) {
+		return;
+	}
+
+	if (obj.HasKey("player_id")) {
+		obj.GetString("player_id", g_Player[client].player_id, sizeof(Player::player_id));
+	}
+
+	if (!obj.HasKey("games")) {
+		return;
+	}
+
 	JSONObject games = view_as<JSONObject>(obj.Get("games"));
+
+	if (!obj.HasKey("csgo")) {
+		return;
+	}
+
 	JSONObject csgo = view_as<JSONObject>(games.Get("csgo"));
 
-	g_Player[client].registered = response.Status != HTTPStatus_NotFound;
-	obj.GetString("player_id", g_Player[client].player_id, sizeof(Player::player_id));
-	g_Player[client].skill_level = csgo.GetInt("skill_level");
-	g_Player[client].faceit_elo = csgo.GetInt("faceit_elo");
+
+	if (csgo.HasKey("skill_level")) {
+		g_Player[client].skill_level = csgo.GetInt("skill_level");
+	}
+	
+	if (csgo.HasKey("faceit_elo")) {
+		g_Player[client].faceit_elo = csgo.GetInt("faceit_elo");
+	}
 
 	Call_StartForward(g_Forward_OnGetFACEITData);
 	Call_PushCell(client);
@@ -158,7 +182,7 @@ public int Native_GetPlayerID(Handle plugin, int numParam) {
 	if (client < 1 || client > MaxClients) {
 		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %i", client);
 	}
-
+ 
 	SetNativeString(2, g_Player[client].player_id, sizeof(Player::player_id));
 	return 1;
 }

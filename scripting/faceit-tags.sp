@@ -5,7 +5,7 @@
 #include <faceit-api>
 #include <chat-processor>
 
-#define PLUGIN_VERSION "1.0.0"
+#define PLUGIN_VERSION "1.0.1"
 
 ConVar convar_Enabled;
 
@@ -18,6 +18,8 @@ public Plugin myinfo = {
 };
 
 public void OnPluginStart() {
+	LoadTranslations("faceit_tags.phrases");
+
 	CreateConVar("sm_faceit_tags_version", PLUGIN_VERSION, "Version control for this plugin.", FCVAR_DONTRECORD);
 	convar_Enabled = CreateConVar("sm_faceit_tags_enabled", "1", "Should this plugin be enabled or disabled?", FCVAR_NOTIFY, true, 0.0, true, 1.0);
 	AutoExecConfig();
@@ -32,6 +34,6 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
 		return Plugin_Continue;
 	}
 
-	Format(name, MAXLENGTH_NAME, "[FACEIT Level: %i] %s", FACEIT_GetSkillLevel(author), name);
+	Format(name, MAXLENGTH_NAME, "%t", "level tag", FACEIT_GetSkillLevel(author), name);
 	return Plugin_Changed;
 }

@@ -1,0 +1,32 @@
+"Phrases"
+{
+	"level usage"
+	{
+		"#format"	"{1:s}"
+		"en"	"[FACEIT] Usage: {1} <player>"
+	}
+
+	"elo usage"
+	{
+		"#format"	"{1:s}"
+		"en"	"[FACEIT] Usage: {1} <player>"
+	}
+
+	"not registered"
+	{
+		"#format"	"{1:N}"
+		"en"	"[FACEIT] {1} is not registered on FACEIT."
+	}
+
+	"show level"
+	{
+		"#format"	"{1:N} {2:i}"
+		"en"	"[FACEIT] {1}'s level is: {2}"
+	}
+
+	"show elo"
+	{
+		"#format"	"{1:N} {2:i}"
+		"en"	"[FACEIT] {1}'s elo is: {2}"
+	}
+}

@@ -20,6 +20,8 @@ public Plugin myinfo = {
 };
 
 public void OnPluginStart() {
+	LoadTranslations("faceit_serveraccess.phrases");
+	
 	CreateConVar("sm_faceit_serveraccess_version", PLUGIN_VERSION, "Version control for this plugin.", FCVAR_DONTRECORD);
 	convar_Enabled = CreateConVar("sm_faceit_serveraccess_enabled", "1", "Should this plugin be enabled or disabled?", FCVAR_NOTIFY, true, 0.0, true, 1.0);
 	convar_Required_Registered = CreateConVar("sm_faceit_serveraccess_required_registered", "1", "Are they required to be registered to join the server?", FCVAR_NOTIFY, true, 0.0, true, 1.0);
@@ -34,16 +36,19 @@ public void OnGetFACEITData(int client, bool registered, JSONObject obj) {
 	}
 
 	if (convar_Required_Registered.BoolValue && !registered) {
-		KickClient(client, "You must be registered on FACEIT to join this server.");
+		KickClient(client, "%T", "not registered kick", client);
+		LogMessage("[FACEIT] Kicked client %d for not being registered on FACEIT.", client);
 		return;
 	}
 
 	if (convar_Required_Level.IntValue > 0 && FACEIT_GetSkillLevel(client) < convar_Required_Level.IntValue) {
-		KickClient(client, "You must be FACEIT level %d or higher to join this server.", convar_Required_Level.IntValue);
+		KickClient(client, "%T", "too low level kick", client, convar_Required_Level.IntValue);
+		LogMessage("[FACEIT] Kicked client %d for not being level %d on FACEIT.", client, convar_Required_Level.IntValue);
 		return;
 	}
 
 	if (convar_Required_Elo.IntValue > 0 && FACEIT_GetElo(client) < convar_Required_Elo.IntValue) {
-		KickClient(client, "You must have a FACEIT elo of %d or higher to join this server.", convar_Required_Elo.IntValue);
+		KickClient(client, "%T", "", client, convar_Required_Elo.IntValue);
+		LogMessage("[FACEIT] Kicked client %d for not having an elo of %d on FACEIT.", client, convar_Required_Elo.IntValue);
 	}
 }

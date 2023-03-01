@@ -3,8 +3,7 @@
 #endif
 #define _faceit_api_included
 
-#include <steamworks>
-#include <json>
+#include <ripext>
 
 ////////////////////////////
 //Natives
@@ -58,7 +57,7 @@ native int FACEIT_GetElo(int client);
 *
 * noreturn
 **/
-forward void OnGetFACEITData(int client, bool registered, JSON_Object obj);
+forward void OnGetFACEITData(int client, bool registered, JSONObject obj);
 
 #if !defined REQUIRE_PLUGIN
 public void __pl_faceit_api_SetNTVOptional()

@@ -89,49 +89,41 @@ public void OnClientAuthorized(int client, const char[] auth) {
 
 	Format(apikey, sizeof(apikey), "Bearer %s", apikey);
 
-	Handle request = SteamWorks_CreateHTTPRequest(k_EHTTPMethodGET, "https://open.faceit.com/data/v4/players");
-	SteamWorks_SetHTTPRequestNetworkActivityTimeout(request, 10);
+	HTTPRequest request = new HTTPRequest("https://open.faceit.com/data/v4/players");
+	request.ConnectTimeout = 10;
 
-	SteamWorks_SetHTTPRequestGetOrPostParameter(request, "game", "csgo");
-	SteamWorks_SetHTTPRequestGetOrPostParameter(request, "game_player_id", steamid64);
+	request.AppendQueryParam("game", "csgo");
+	request.AppendQueryParam("game_player_id", steamid64);
 
-	SteamWorks_SetHTTPRequestHeaderValue(request, "accept", "application/json");
-	SteamWorks_SetHTTPRequestHeaderValue(request, "Authorization", apikey);
+	request.SetHeader("accept", "application/json");
+	request.SetHeader("Authorization", apikey);
 
-	SteamWorks_SetHTTPCallbacks(request, OnGetFACEITAPIData);
-	SteamWorks_SetHTTPRequestContextValue(request, GetClientUserId(client));
-	SteamWorks_SendHTTPRequest(request);
-
+	request.Get(OnGetFACEITAPIData, GetClientUserId(client));
+	
 	LogMessage("[SM] Requesting FACEIT data for %N...", client);
 }
 
-public void OnGetFACEITAPIData(Handle hRequest, bool bFailure, bool bRequestSuccessful, EHTTPStatusCode eStatusCode, any data1)  {
+public void OnGetFACEITAPIData(HTTPResponse response, any value)  {
 	if (!convar_Enabled.BoolValue) {
 		return;
 	}
 
-	//PrintToServer("Status: %i", eStatusCode);
+	//Sometimes just returns 0 for no good reason.
+	//PrintToServer("Status: %i", response.Status);
 
-	if (eStatusCode != k_EHTTPStatusCode200OK && eStatusCode != k_EHTTPStatusCode404NotFound) {
-		ThrowError("[SM] Error while fetching FACEIT data with Error Code '%i'.", eStatusCode);
+	if (response.Status != HTTPStatus_OK && response.Status != HTTPStatus_NotFound) {
+		ThrowError("[SM] Error while fetching FACEIT data with Error Code '%i'.", response.Status);
 	}
 
 	int client;
-	if ((client = GetClientOfUserId(data1)) < 1) {
+	if ((client = GetClientOfUserId(value)) < 1) {
 		return;
 	}
 
-	g_Player[client].registered = eStatusCode != k_EHTTPStatusCode404NotFound;
+	g_Player[client].registered = response.Status != HTTPStatus_NotFound;
 
-	int size;
-	SteamWorks_GetHTTPResponseBodySize(hRequest, size);
-
-	char[] body = new char[size];
-	SteamWorks_GetHTTPResponseBodyData(hRequest, body, size);
-
-	delete hRequest;
-
-	JSON_Object obj = json_decode(body);
+	//Sometimes just errors out, think it might be the extension.
+	JSONObject obj = view_as<JSONObject>(response.Data);
 
 	if (obj != null) {
 		if (obj.HasKey("player_id")) {
@@ -140,11 +132,11 @@ public void OnGetFACEITAPIData(Handle hRequest, bool bFailure, bool bRequestSucc
 		}
 
 		if (obj.HasKey("games")) {
-			JSON_Object games = obj.GetObject("games");
-			
+			JSONObject games = view_as<JSONObject>(obj.Get("games"));
+
 			if (games != null && games.HasKey("csgo")) {
-				JSON_Object csgo = games.GetObject("csgo");
-				
+				JSONObject csgo = view_as<JSONObject>(games.Get("csgo"));
+
 				if (csgo != null) {
 					if (csgo.HasKey("skill_level")) {
 						g_Player[client].skill_level = csgo.GetInt("skill_level");
@@ -163,10 +155,8 @@ public void OnGetFACEITAPIData(Handle hRequest, bool bFailure, bool bRequestSucc
 	Call_StartForward(g_Forward_OnGetFACEITData);
 	Call_PushCell(client);
 	Call_PushCell(g_Player[client].registered);
-	Call_PushCell(json_copy_deep(obj)); //Might need to duplicate this.
+	Call_PushCell(obj); //Might need to duplicate this.
 	Call_Finish();
-
-	json_cleanup_and_delete(obj);
 
 	LogMessage("[SM] Successfully fetched FACEIT data for %N, they %s registered.", client, g_Player[client].registered ? "are" : "are not");
 }

@@ -20,13 +20,13 @@
 
 	"show level"
 	{
-		"#format"	"{1:N} {2:i}"
+		"#format"	"{1:N},{2:i}"
 		"en"	"[FACEIT] {1}'s level is: {2}"
 	}
 
 	"show elo"
 	{
-		"#format"	"{1:N} {2:i}"
+		"#format"	"{1:N},{2:i}"
 		"en"	"[FACEIT] {1}'s elo is: {2}"
 	}
 }
